@@ -86,7 +86,14 @@ async def get_trading_results(request: Request, backgroundtasks: BackgroundTasks
     cached_result = await redis_service.get_cache(request)
     if cached_result:
         return cached_result
-    latest_trade_date = await db.scalar(select(func.max(SpimexTradingResults.date)))
+
+    latest_trade_date = await db.scalar(select(func.max(SpimexTradingResults.date)).where(and_(
+        SpimexTradingResults.oil_id == oil_id.upper() if oil_id else not None,
+        SpimexTradingResults.delivery_type_id == delivery_type_id.upper()
+        if delivery_type_id else not None,
+        SpimexTradingResults.delivery_basis_id == delivery_basis_id.upper()
+        if delivery_basis_id else not None)))
+
     trades = await db.scalars(select(SpimexTradingResults).where(and_(
                     SpimexTradingResults.date == latest_trade_date,
                     SpimexTradingResults.oil_id == oil_id.upper() if oil_id else not None,

@@ -108,10 +108,18 @@ async def test_get_trading_results(client, create_list_trade, db):
 
 
 @pytest.mark.asyncio
-async def test_get_trading_results_with_params(client, create_list_trade):
+async def test_get_trading_results_with_params(client, create_list_trade, db):
     oil_id = 'DSC5'
     delivery_type_id = 'U'
     response = await client.get(f'results/latest_trade?oil_id={oil_id}&delivery_type_id={delivery_type_id}')
+    trades = await db.scalars(select(SpimexTradingResults).where(and_(
+        SpimexTradingResults.oil_id == oil_id,
+        SpimexTradingResults.delivery_type_id == delivery_type_id)).order_by(desc(SpimexTradingResults.date)))
+    trades = trades.all()
     assert response.status_code == 200
-    assert response.json() == []
+    assert len(response.json()) == len(trades) == 1
+    assert response.json()[0]['id'] == trades[0].id
+    assert response.json()[0]['oil_id'] == trades[0].oil_id
+    assert (response.json()[0]['date'].split('T')[0] == str(trades[0].date.date()) ==
+            str(date.today() - timedelta(days=1)))
 
