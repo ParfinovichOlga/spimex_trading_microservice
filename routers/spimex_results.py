@@ -18,6 +18,8 @@ router = APIRouter(prefix='/results', tags=['results'])
 
 async def days_limit(limit: int = 5) -> int:
     """Set limit latest trade dates"""
+    if limit < 0:
+        return 0
     return limit
 
 
@@ -28,6 +30,7 @@ async def get_last_trading_dates(request: Request, backgroundtasks: BackgroundTa
                                  ) -> JSONResponse:
     cached_result = await redis_service.get_cache(request)
     if cached_result:
+        print('uuuuu')
         return cached_result
     results = await db.scalars(select(SpimexTradingResults.date).group_by(SpimexTradingResults.date).
                                order_by(desc(SpimexTradingResults.date)))
@@ -65,9 +68,10 @@ async def get_dynamics(request: Request, backgroundtasks: BackgroundTasks,
                             )
                         ).order_by(desc(SpimexTradingResults.date))
                 )
+    trades = trades.all()
     res = str([CreateSpimexTrading.model_validate(obj).model_dump() for obj in trades])
     backgroundtasks.add_task(redis_service.set_cache, request, res)
-    return res
+    return trades
 
 
 @router.get('/latest_trade')
@@ -90,6 +94,7 @@ async def get_trading_results(request: Request, backgroundtasks: BackgroundTasks
                     if delivery_type_id else not None,
                     SpimexTradingResults.delivery_basis_id == delivery_basis_id.upper()
                     if delivery_basis_id else not None)).order_by(SpimexTradingResults.oil_id))
+    trades = trades.all()
     res = str([CreateSpimexTrading.model_validate(obj).model_dump() for obj in trades])
     backgroundtasks.add_task(redis_service.set_cache, request, res)
-    return res
+    return trades

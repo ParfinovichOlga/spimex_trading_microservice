@@ -1,16 +1,16 @@
 import redis
-from datetime import datetime
-from config import REDIS_PORT, REDIS_HOST, CACHE_STORAGE_TIME
+import datetime
+from config import settings
 from fastapi import Request
 
-redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT)
+redis_client = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
 
 
 async def get_cache_ttl() -> int:
     """Get cache ttl in seconds before 14:11."""
-    now = datetime.now()
+    now = datetime.datetime.now()
     now_in_seconds = now.hour * 60 * 60 + now.minute * 60
-    storage_time = int(CACHE_STORAGE_TIME)
+    storage_time = int(settings.CACHE_STORAGE_TIME)
     if now_in_seconds < storage_time:
         return storage_time - now_in_seconds
     else:

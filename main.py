@@ -6,6 +6,6 @@ app = FastAPI()
 app.include_router(spimex_results.router)
 
 
-@app.get('/')
-async def start() -> dict:
-    return {'API': 'Spimex Trading Results'}
+@app.get('/healthy')
+async def health_check() -> dict:
+    return {'status': 'Healthy'}
